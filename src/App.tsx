@@ -1,33 +1,49 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import fileToDataUrl from './utils/fileToDataUrl';
+
+interface Photo {
+  dataURL: string;
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [photos, setPhotos] = useState<Photo[]>([]);
+
+  const handleSelect = async (evt: React.ChangeEvent<HTMLInputElement>) => {
+    if (evt.target.files) {
+      const files = Array.from(evt.target.files);
+      const urls = await Promise.all(files.map(o => fileToDataUrl(o)));
+      
+      setPhotos(prevState => [...prevState, ...urls.map(u => ({ dataURL: u }))])
+    }
+  }
+
+  function handleDelete(id: string): void {
+    setPhotos(prevState => prevState.filter(photo => photo.dataURL !== id));
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className='input_container'>
+        <div className='overlay'>Click to select</div>
+        <input type="file" className="hiddenInput" onChange={handleSelect}/>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+      <div className='gallery'>
+        {photos.map((photo, index) => (
+          <div className='preview_container'>
+            <img
+              src={photo.dataURL}
+              alt={`Photo ${index + 1}`}
+              key={index}
+              className="preview"
+            />
+            <button
+              className='delete'
+              onClick={() => handleDelete(photo.dataURL)}>
+            ×</button>
+          </div>
+        ))}
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
